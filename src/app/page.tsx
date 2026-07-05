@@ -197,7 +197,7 @@ export default function LincoUltimatePage() {
           <div className="flex flex-col h-full w-full justify-between">
             <div className="flex-1 p-10 overflow-y-auto flex flex-col gap-5">
               {messages.map((msg) => (
-                <div key={msg.id} className={`flex max-w-[80%] p-4.5 px-6 rounded-2xl text-[15.5px] leading-relaxed shadow-sm ${msg.sender === 'user' ? 'bg-gradient-to-br from-[#06b6d4] to-[#3b82f6] text-white self-end font-medium rounded-tr-none' : `self-start border rounded-tl-none ${theme === 'dark' ? 'bg-[#1f2937] border-[#374151] text-slate-100' : 'bg-white border-[#cbd5e1] text-[#0f172a]'}`}`}>
+                <div key={msg.id} className={`flex max-w-[80%] p-4.5 px-6 rounded-2xl text-[15.5px] leading-relaxed shadow-sm whitespace-pre-wrap break-words ${msg.sender === 'user' ? 'bg-gradient-to-br from-[#06b6d4] to-[#3b82f6] text-white self-end font-medium rounded-tr-none' : `self-start border rounded-tl-none ${theme === 'dark' ? 'bg-[#1f2937] border-[#374151] text-slate-100' : 'bg-white border-[#cbd5e1] text-[#0f172a]'}`}`}>
                   {msg.text}
                 </div>
               ))}
