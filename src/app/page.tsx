@@ -117,105 +117,75 @@ export default function LincoUltimatePage() {
   };
 
   // 안전 모드용 시뮬레이터 로직
+  // Dify AI 엔진 연동 함수
   const executeSend = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
+    // 1. 유저 메시지 추가 및 입력창 비우기
     setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text }]);
     setInput('');
     setIsLoading(true);
 
-   const executeSend = async (text: string) => {
-  if (!text.trim()) return;
+    try {
+      // 2. Dify API 호출 (주소 끝에 /chat-messages를 반드시 붙여야 합니다)
+      const response = await fetch('https://api.dify.ai/v1/chat-messages', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer app-9We3jSI8ayICovlytatAxpy7', // 유저님이 넣으신 키 유지
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: {},
+          query: text,
+          user: "linco-user",
+          response_mode: "blocking"
+        }),
+      });
 
-  // 1. 유저 메시지 추가
-  const userMsgId = Date.now();
-  setMessages(prev => [...prev, { id: userMsgId, sender: 'user', text }]);
-  setIsLoading(true);
+      if (!response.ok) {
+        throw new Error('API 요청에 실패했습니다.');
+      }
 
-  try {
-    // 2. Dify API 호출
-    // * 주의: 프론트엔드에서 API 키를 직접 노출하는 것은 보안상 위험하므로, 
-    //   실제 서비스 시에는 Next.js API Routes(/api/chat 등)를 거쳐서 호출하는 것을 권장합니다.
-    const response = await fetch('https://api.dify.ai/v1', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'app-9We3jSI8ayICovlytatAxpy7', // 발급받은 Dify API Key 입력
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: {},
-        query: text,
-        user: "linco-user", // 사용자를 식별할 수 있는 임의의 값
-        response_mode: "blocking" // 스트리밍이 아닌 한 번에 답변을 받는 모드
-      }),
-    });
+      const data = await response.json();
+      
+      // 3. AI 답변 추가
+      const aiAnswer = data.answer || "답변을 가져오지 못했습니다.";
+      setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'ai', text: aiAnswer }]);
 
-    if (!response.ok) {
-      throw new Error('API 요청에 실패했습니다.');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setMessages(prev => [
+        ...prev, 
+        { id: Date.now() + 1, sender: 'ai', text: '⚠️ 에러가 발생했습니다. API 연결 상태나 CORS 설정을 확인해 주세요.' }
+      ]);
+    } finally {
+      // 에러가 나든 성공하든 무조건 로딩을 꺼서 무한 로딩 방지
+      setIsLoading(false);
     }
-
-    const data = await response.json();
-    
-    // 3. AI 답변 추가 (Dify의 응답 구조에 맞게 추출)
-    const aiAnswer = data.answer || "답변을 가져오지 못했습니다.";
-    setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'ai', text: aiAnswer }]);
-
-  } catch (error) {
-    console.error('Error sending message:', error);
-    setMessages(prev => [
-      ...prev, 
-      { id: Date.now() + 1, sender: 'ai', text: '⚠️ 에러가 발생했습니다. API 연결 상태를 확인해 주세요.' }
-    ]);
-  } finally {
-    setIsLoading(false);
-  }
-};
   };
 
   const handleFormSubmit = (e: FormEvent) => {
     e.preventDefault();
     executeSend(input);
   };
-
   return (
     <div className={`min-h-screen flex w-screen h-screen overflow-hidden antialiased transition-colors duration-300 tracking-tight font-sans ${theme === 'dark' ? 'bg-[#0b0f19] text-[#f8fafc]' : 'bg-[#f1f5f9] text-[#0f172a]'}`}>
-      
-      {/* HTML 표준 link 아이콘 및 웹폰트 안전하게 주입 */}
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" crossOrigin="anonymous" />
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossOrigin="anonymous" />
-      
-      <style dangerouslySetInnerHTML={{__html: `
-        body, html, * {
-          font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        }
-      `}} />
-
       {/* LEFT SIDEBAR DESIGN */}
       <aside className={`w-[280px] p-10 flex flex-col justify-between border-r shrink-0 z-50 h-full transition-all ${theme === 'dark' ? 'bg-[#111827] border-[#374151] shadow-[4px_0_20px_rgba(0,0,0,0.5)]' : 'bg-white border-[#cbd5e1] shadow-[4px_0_15px_rgba(0,0,0,0.03)]'}`}>
         <div className="flex flex-col gap-10">
-          <div className="font-bold text-2xl tracking-wide text-current">
-            ⚙️ LINCO
-            <span className="block mt-1.5 font-normal text-xs text-[#94a3b8] tracking-widest uppercase">Strategic Framework</span>
+          <div className="font-bold text-2xl tracking-wide text-current flex flex-col items-start gap-2">
+            <img src="/LINCO.png" alt="링코 로고" className="h-8 w-auto object-contain"/>
+            <span className="font-normal text-xs text-[#94a3b8] tracking-widest uppercase">시작이 가벼워지다</span>
           </div>
           <nav className="flex flex-col gap-2.5">
-            <button type="button" onClick={() => { setActiveTab('chat'); setActiveDetail(null); }} className={`w-full text-left p-3.5 px-4 font-semibold text-[14.5px] border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${activeTab === 'chat' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent shadow-[0_4px_14px_rgba(6,182,212,0.3)] scale-[1.02]' : 'bg-transparent text-[#94a3b8] border-transparent hover:bg-slate-500/10 hover:text-current'}`}>
-              <span>AI 비서</span>
-            </button>
-            <button type="button" onClick={() => { setActiveTab('guide'); setActiveDetail(null); }} className={`w-full text-left p-3.5 px-4 font-semibold text-[14.5px] border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${activeTab === 'guide' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent shadow-[0_4px_14px_rgba(6,182,212,0.3)] scale-[1.02]' : 'bg-transparent text-[#94a3b8] border-transparent hover:bg-slate-500/10 hover:text-current'}`}>
-              <span>질문 가이드 및 설명서</span>
-            </button>
-            <button type="button" onClick={() => { setActiveTab('overview'); setActiveDetail(null); }} className={`w-full text-left p-3.5 px-4 font-semibold text-[14.5px] border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${activeTab === 'overview' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent shadow-[0_4px_14px_rgba(6,182,212,0.3)] scale-[1.02]' : 'bg-transparent text-[#94a3b8] border-transparent hover:bg-slate-500/10 hover:text-current'}`}>
-              <span>서비스 개요</span>
-            </button>
+            <button type="button" onClick={() => { setActiveTab('chat'); setActiveDetail(null); }} className={`w-full text-left p-3.5 px-4 font-semibold text-[14.5px] border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${activeTab === 'chat' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent shadow-[0_4px_14px_rgba(6,182,212,0.3)] scale-[1.02]' : 'bg-transparent text-[#94a3b8] border-transparent hover:bg-slate-500/10 hover:text-current'}`}><span>AI 비서</span></button>
+            <button type="button" onClick={() => { setActiveTab('guide'); setActiveDetail(null); }} className={`w-full text-left p-3.5 px-4 font-semibold text-[14.5px] border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${activeTab === 'guide' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent shadow-[0_4px_14px_rgba(6,182,212,0.3)] scale-[1.02]' : 'bg-transparent text-[#94a3b8] border-transparent hover:bg-slate-500/10 hover:text-current'}`}><span>질문 가이드 및 설명서</span></button>
+            <button type="button" onClick={() => { setActiveTab('overview'); setActiveDetail(null); }} className={`w-full text-left p-3.5 px-4 font-semibold text-[14.5px] border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${activeTab === 'overview' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent shadow-[0_4px_14px_rgba(6,182,212,0.3)] scale-[1.02]' : 'bg-transparent text-[#94a3b8] border-transparent hover:bg-slate-500/10 hover:text-current'}`}><span>서비스 개요</span></button>
           </nav>
         </div>
         <div className="flex flex-col gap-2.5">
-          <button type="button" onClick={() => { setActiveTab('roadmap'); setActiveDetail(null); }} className={`w-full text-left p-3.5 px-4 font-semibold text-[14.5px] border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${activeTab === 'roadmap' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent scale-[1.02]' : 'bg-transparent text-[#94a3b8] border-transparent hover:bg-slate-500/10 hover:text-current'}`}>
-            <span>앞으로의 로드맵</span>
-          </button>
-          <button type="button" onClick={() => { setActiveTab('settings'); setActiveDetail(null); }} className={`w-full text-left p-3.5 px-4 font-semibold text-[14.5px] border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${activeTab === 'settings' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent scale-[1.02]' : 'bg-transparent text-[#94a3b8] border-transparent hover:bg-slate-500/10 hover:text-current'}`}>
-            <span>설정</span>
-          </button>
+          <button type="button" onClick={() => { setActiveTab('roadmap'); setActiveDetail(null); }} className={`w-full text-left p-3.5 px-4 font-semibold text-[14.5px] border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${activeTab === 'roadmap' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent scale-[1.02]' : 'bg-transparent text-[#94a3b8] border-transparent hover:bg-slate-500/10 hover:text-current'}`}><span>앞으로의 로드맵</span></button>
+          <button type="button" onClick={() => { setActiveTab('settings'); setActiveDetail(null); }} className={`w-full text-left p-3.5 px-4 font-semibold text-[14.5px] border rounded-xl transition-all flex items-center gap-3 cursor-pointer ${activeTab === 'settings' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent scale-[1.02]' : 'bg-transparent text-[#94a3b8] border-transparent hover:bg-slate-500/10 hover:text-current'}`}><span>설정</span></button>
         </div>
       </aside>
 
@@ -304,35 +274,41 @@ export default function LincoUltimatePage() {
 
         {/* SERVICE OVERVIEW TAB */}
         {activeTab === 'overview' && (
-          <div className="w-full h-full p-12 box-border overflow-y-auto relative">
-            {!activeDetail ? (
-              <>
-                <h1 className="text-3xl font-bold tracking-tight">Service Overview</h1>
-                <span className="text-[#94a3b8] text-[15px] font-medium block mt-1.5 mb-10">일상의 핵심 난제 해결을 위한 6대 프레임워크 백서</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {Object.keys(CATEGORY_DATA).map((key) => (
-                    <div key={key} onClick={() => setActiveDetail(key)} className={`border p-8 rounded-2xl cursor-pointer flex flex-col justify-between transition-all duration-300 relative group hover:-translate-y-2 hover:border-[#38bdf8] ${theme === 'dark' ? 'bg-[#1f2937] border-[#374151] shadow-[0_4px_20px_rgba(0,0,0,0.3)]' : 'bg-white border-[#cbd5e1] shadow-[0_4px_15px_rgba(0,0,0,0.02)]'}`}>
-                      <div className="absolute top-0 left-0 w-full h-[4px] bg-[#3b82f6] rounded-t-2xl"></div>
-                      <div>
-                        <span className="font-bold text-sm text-[#38bdf8] mb-4 block font-mono tracking-wider">{CATEGORY_DATA[key].num}</span>
-                        <h3 className="text-xl font-bold mb-3.5 leading-snug text-current tracking-tight">{CATEGORY_DATA[key].title.replace(" 백서", "")}</h3>
-                        <p className="text-sm text-[#94a3b8] leading-relaxed mb-6 font-normal line-clamp-2">{CATEGORY_DATA[key].subtitle}</p>
-                      </div>
-                      <div className="text-[13px] font-bold text-[#38bdf8] flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">전략 백서 보기 &rarr;</div>
+          <div className="w-full h-full p-12 box-border overflow-hidden relative">
+            {/* 목록 페이지 */}
+            <div className={`transition-all duration-500 ease-out absolute inset-0 p-12 overflow-y-auto ${activeDetail ? '-translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`} style={{ pointerEvents: activeDetail ? 'none' : 'auto' }}>
+              <h1 className="text-3xl font-bold tracking-tight">Service Overview</h1>
+              <span className="text-[#94a3b8] text-[15px] font-medium block mt-1.5 mb-10">일상의 핵심 난제 해결을 위한 6대 프레임워크 백서</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Object.keys(CATEGORY_DATA).map((key) => (
+                  <div key={key} onClick={() => setActiveDetail(key)} className={`border p-8 rounded-2xl cursor-pointer flex flex-col justify-between transition-all duration-300 relative group hover:-translate-y-2 hover:border-[#38bdf8] ${theme === 'dark' ? 'bg-[#1f2937] border-[#374151] shadow-[0_4px_20px_rgba(0,0,0,0.3)]' : 'bg-white border-[#cbd5e1] shadow-[0_4px_15px_rgba(0,0,0,0.02)]'}`}>
+                    <div className="absolute top-0 left-0 w-full h-[4px] bg-[#3b82f6] rounded-t-2xl"></div>
+                    <div>
+                      <span className="font-bold text-sm text-[#38bdf8] mb-4 block font-mono tracking-wider">{CATEGORY_DATA[key].num}</span>
+                      <h3 className="text-xl font-bold mb-3.5 leading-snug text-current tracking-tight">{CATEGORY_DATA[key].title.replace(" 백서", "")}</h3>
+                      <p className="text-sm text-[#94a3b8] leading-relaxed mb-6 font-normal line-clamp-2">{CATEGORY_DATA[key].subtitle}</p>
                     </div>
-                  ))}
-                </div>
-              </>
-            ) : (
+                    <div className="text-[13px] font-bold text-[#38bdf8] flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">전략 백서 보기 &rarr;</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 상세 페이지 */}
+            <div className={`transition-all duration-500 ease-out absolute inset-0 p-12 overflow-y-auto ${activeDetail ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`} style={{ pointerEvents: activeDetail ? 'auto' : 'none' }}>
               <div className="max-w-4xl mx-auto py-4">
                 <button onClick={() => setActiveDetail(null)} className="text-[14.5px] text-[#94a3b8] hover:text-current font-semibold flex items-center gap-2 mb-8 bg-transparent border-none cursor-pointer">
                   &larr; 목록 대시보드로 돌아가기
                 </button>
-                <h2 className="text-3xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-[#3b82f6]">{CATEGORY_DATA[activeDetail].title}</h2>
-                <div className="text-slate-400 font-medium mb-8 pb-5 border-b border-slate-700/60">{CATEGORY_DATA[activeDetail].subtitle}</div>
-                <div>{CATEGORY_DATA[activeDetail].content}</div>
+                {activeDetail && (
+                  <>
+                    <h2 className="text-3xl font-extrabold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-[#06b6d4] to-[#3b82f6]">{CATEGORY_DATA[activeDetail].title}</h2>
+                    <div className="text-slate-400 font-medium mb-8 pb-5 border-b border-slate-700/60">{CATEGORY_DATA[activeDetail].subtitle}</div>
+                    <div>{CATEGORY_DATA[activeDetail].content}</div>
+                  </>
+                )}
               </div>
-            )}
+            </div>
           </div>
         )}
 
@@ -364,8 +340,8 @@ export default function LincoUltimatePage() {
             <div className={`p-6 border rounded-2xl max-w-xl ${theme === 'dark' ? 'bg-[#1f2937] border-[#374151]' : 'bg-white border-[#cbd5e1]'}`}>
               <div className="text-base font-bold mb-4 flex items-center gap-2"><i className="fa-solid fa-palette text-[#38bdf8]"></i> 시각 테마 디자인 모드</div>
               <div className="flex gap-4">
-                <button onClick={() => setTheme('dark')} className="flex-1 p-3.5 font-bold rounded-xl border bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent">Dark Premium</button>
-                <button onClick={() => setTheme('light')} className="flex-1 p-3.5 font-bold rounded-xl border bg-slate-600 text-white border-transparent">Light Elegant</button>
+                <button onClick={() => setTheme('dark')} className={`flex-1 p-3.5 font-bold rounded-xl border transition-all ${theme === 'dark' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent' : 'bg-slate-600 text-white border-transparent hover:bg-slate-500'}`}>Dark Premium</button>
+                <button onClick={() => setTheme('light')} className={`flex-1 p-3.5 font-bold rounded-xl border transition-all ${theme === 'light' ? 'bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] text-white border-transparent' : 'bg-slate-600 text-white border-transparent hover:bg-slate-500'}`}>Light Elegant</button>
               </div>
             </div>
           </div>
