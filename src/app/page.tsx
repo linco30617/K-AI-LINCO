@@ -238,9 +238,11 @@ export default function LincoUltimatePage() {
             {/* 새 가이드북 기반 맞춤형 키워드 해시태그 */}
             <div className="flex flex-wrap gap-2.5 px-10 mb-5">
               {[
-                { label: 'POLICY 01 금융·자산 형성', query: 'POLICY 01 금융·자산 형성 분야 핵심 복지 제도의 소득 및 재산 기준을 알려줘' },
-                { label: '메이커 스페이스 시제품 지원', query: '메이커 스페이스 시제품 제작지원 정책의 제출 서류가 무엇인지 5단계 서식으로 알려줘' },
-                { label: '스타트업 해외진출 지원', query: 'POLICY 49 청년 스타트업 해외진출 엑셀러레이팅 지원 내용과 신청 방법을 설명해줘' }
+                { label: '청년월세지원', query: '청년월세지원 정책의 구체적인 지원 내용과 내가 받을 수 있는 혜택이 뭐야? 나이, 소득 기준이랑 신청 서류도 같이 알려줘.' },
+                { label: '청년도약계좌', query: '청년도약계좌로 목돈을 마련하고 싶은데, 가입 자격(소득·재산) 조건이 어떻게 돼? 매달 얼마씩 모으면 최종적으로 얼마를 받는지 계산해 줘.' },
+                { label: '청년구직활동지원금', query: '청년구직활동지원금은 미취업 청년이면 누구나 받을 수 있어? 구직 단념 청년이나 취업 준비생을 위한 구체적인 지원 금액이랑 고용24 신청 방법을 알려줘.' },
+                { label: '청년소득세감면', query: '중소기업에 취업하거나 창업한 청년을 위한 청년 소득세 감면 제도의 혜택 비율이 어떻게 돼? 회사나 홈택스에서 어떻게 신청하는지 주의사항과 함께 알려줘.' },
+                { label: '청년버팀목전세자금대출', query: '청년 버팀목 전세자금 대출의 한도와 금리 우대 조건이 궁금해. 주택드림 청약대출 같은 다른 청년 주거 금융 정책과 비교해서 나에게 더 유리한 걸 추천해 줘.' }
               ].map(tag => (
                 <button key={tag.label} type="button" onClick={() => executeSend(tag.query)} className="text-[13px] font-semibold border rounded-full px-4 py-2.5 bg-[#1f2937] text-[#38bdf8] border-[#374151] hover:text-white cursor-pointer transition-all"># {tag.label}</button>
               ))}
