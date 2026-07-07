@@ -4,33 +4,37 @@ export async function POST(request: Request) {
   try {
     const { message, conversationId } = await request.json();
 
-    const difyUrl = process.env.DIFY_API_URL || 'https://api.dify.ai/v1';
-    const difyKey = process.env.DIFY_API_KEY || 'app-9We3jSI8ayICovlytatAxpy7ht';
-
-    if (!difyKey) {
-      return NextResponse.json({ 
-        answer: "⚠️ .env.local 파일에 DIFY_API_KEY가 설정되지 않았습니다. 설정을 확인해 주세요." 
-      });
-    }
-
-    const response = await fetch(`${difyUrl}/chat-messages`, {
+    // 🚀 로컬 파이썬 서버(FastAPI)로 사용자의 질문을 전달합니다.
+    const pythonServerUrl = 'https://python-wnj7.onrender.com';
+    
+    const response = await fetch(pythonServerUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${difyKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: {},
-        query: message,
-        response_mode: 'blocking',
-        user: 'linco-web-user',
-        conversation_id: conversationId || "",
+        message: message, // 파이썬 server.py가 받는 필드명
       }),
     });
 
+    if (!response.ok) {
+      throw new Error('파이썬 백엔드 서버 응답 실패');
+    }
+
     const data = await response.json();
-    return NextResponse.json(data);
+
+    // 파이썬 서버에서 받은 답변(data.answer)을 프론트엔드로 리턴합니다.
+    return NextResponse.json({
+      answer: data.answer,
+      message,
+      conversationId,
+    });
+
   } catch (error) {
-    return NextResponse.json({ error: 'Dify API 연결에 실패했습니다.' }, { status: 500 });
+    console.error('Next.js API Route Error:', error);
+    return NextResponse.json(
+      { answer: '⚠️ 파이썬 백엔드 서버(server.py)와 통신하는 중 에러가 발생했습니다. 서버가 켜져 있는지 확인하세요.' },
+      { status: 500 }
+    );
   }
 }
