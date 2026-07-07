@@ -165,15 +165,16 @@ export default function LincoUltimatePage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: text,
-        }),
-      });
+      // 현재 코드의 119번째 줄 근처
+const response = await fetch('/api/chat', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    message: text, // 또는 text 대신 query 등
+  }),
+});
 
       if (!response.ok) {
         throw new Error('API 요청에 실패했습니다.');
