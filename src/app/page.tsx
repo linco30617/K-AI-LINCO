@@ -49,11 +49,11 @@ export default function LincoUltimatePage() {
   ];
 
   const SITE_LINKS = [
-    { label: '청년월세지원 바로가기', href: 'https://www.gov.kr/portal/rcvfvrlt' },
-    { label: '청년도약계좌 바로가기', href: 'https://www.gov.kr/portal/service/serviceInfo/P13804' },
-    { label: '청년구직활동지원금 바로가기', href: 'https://www.gov.kr/portal/service/serviceInfo/P16915' },
-    { label: '청년소득세감면 바로가기', href: 'https://www.gov.kr/portal/service/serviceInfo/P16916' },
-    { label: '청년버팀목전세자금대출 바로가기', href: 'https://www.gov.kr/portal/service/serviceInfo/P16848' }
+    { label: '청년월세지원 바로가기', href: 'https://www.bokjiro.go.kr/ssis-tbu/index.do' },
+    { label: '청년도약계좌 바로가기', href: 'https://www.kinfa.or.kr/main.do' },
+    { label: '청년구직활동지원금 바로가기', href: 'https://www.work24.go.kr/cm/main.do' },
+    { label: '청년소득세감면 바로가기', href: 'https://hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index_pp.xml&menuCd=index3' },
+    { label: '청년버팀목전세자금대출 바로가기', href: 'https://enhuf.molit.go.kr/index.jsp' }
   ];
 
   const CATEGORY_DATA: Record<string, CategoryDetail> = {
@@ -251,7 +251,7 @@ export default function LincoUltimatePage() {
                 const randomTag = TAG_OPTIONS[Math.floor(Math.random() * TAG_OPTIONS.length)];
                 executeSend(randomTag.query);
               }} className="w-full p-4 font-bold rounded-xl text-white bg-gradient-to-r from-[#06b6d4] to-[#3b82f6] flex items-center justify-center gap-2 cursor-pointer transition-all">
-                <i className="fa-solid fa-microphone text-base"></i> 가이드북 기반 원클릭 시뮬레이션 질문 입력
+                <i className="fa-solid fa-microphone text-base"></i> 가이드북 기반 해시태그 원클릭 질문
               </button>
               <form onSubmit={handleFormSubmit} className="flex gap-3">
                 <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="새 가이드북의 50선 복지 정책을 입력해 보세요..." className={`flex-1 p-4 px-5 rounded-xl border outline-none ${inputClass}`} />
