@@ -31,7 +31,7 @@ export interface ChatMessage {
 export const DIFY_CONFIG = {
   apiUrl: process.env.NEXT_PUBLIC_DIFY_API_URL || 'http://localhost/v1',
   apiKey: process.env.DIFY_API_KEY || 'app-JA4vN5714g2Nd5ftpyFgN49g',
-  
+  userId: process.env.DIFY_USER_ID || 'usr-0adc0770-a7e5-42f3-bc51-7d34f5cd0b92',
 };
 
 // Dify API 호출 함수
