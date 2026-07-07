@@ -1,40 +1,36 @@
 import { NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { message, conversationId } = await request.json();
+    const { message } = await req.json();
 
-    // 🚀 로컬 파이썬 서버(FastAPI)로 사용자의 질문을 전달합니다.
-    const pythonServerUrl = 'https://python-wnj7.onrender.com/';
-    
-    const response = await fetch(pythonServerUrl, {
+    // ⚡ 내 컴퓨터에서 돌아가는 Dify API 주소와 발급받은 키를 넣습니다.
+    const DIFY_API_URL = 'http://localhost/v1';
+    const DIFY_API_KEY = 'app-EbKM7jzjI2o8jo2Q4H0SggIz';
+
+    const response = await fetch(DIFY_API_URL, {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${DIFY_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        message: message, // 파이썬 server.py가 받는 필드명
+        inputs: {}, // 필요한 변수가 있다면 여기에 넣습니다.
+        query: message, // 사용자가 보낸 질문
+        response_mode: 'blocking', // 답변을 한 번에 다 받기
+        user: 'linco-user-1', // 유저 구분을 위한 임의의 ID
       }),
     });
 
-    if (!response.ok) {
-      throw new Error('파이썬 백엔드 서버 응답 실패');
-    }
-
     const data = await response.json();
+    
+    // Dify가 돌려준 답변 알맹이만 쏙 빼서 프론트엔드로 보냅니다.
+    const aiAnswer = data.answer; 
 
-    // 파이썬 서버에서 받은 답변(data.answer)을 프론트엔드로 리턴합니다.
-    return NextResponse.json({
-      answer: data.answer,
-      message,
-      conversationId,
-    });
+    return NextResponse.json({ answer: aiAnswer });
 
   } catch (error) {
-    console.error('Next.js API Route Error:', error);
-    return NextResponse.json(
-      { answer: '⚠️ 파이썬 백엔드 서버(server.py)와 통신하는 중 에러가 발생했습니다. 서버가 켜져 있는지 확인하세요.' },
-      { status: 500 }
-    );
+    console.error(error);
+    return NextResponse.json({ answer: '⚠️ 링코가 잠시 자리를 비웠어요. 다시 시도해 주세요!' }, { status: 500 });
   }
 }
