@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const instruction = '다음 지침을 지켜서 답변해주세요.\n- 한국어만 사용합니다.\n- 한자는 사용하지 않습니다.\n- 영어는 사용하지 않습니다.\n\n';
+    const instruction = '다음 지침을 지켜서 답변해주세요.\n- 한국어와 숫자만 사용합니다.\n- 한자는 사용하지 않습니다.\n- 영어는 사용하지 않습니다.\n\n';
     const query = `${instruction}${message}`;
 
     const response = await fetch(`${difyUrl}/chat-messages`, {
