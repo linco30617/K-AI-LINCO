@@ -8,6 +8,7 @@ export async function POST(request: Request) {
 
     const difyUrl = process.env.DIFY_API_URL || 'http://localhost/v1';
     const difyKey = process.env.DIFY_API_KEY || 'app-JA4vN5714g2Nd5ftpyFgN49g';
+    const DIFYUSER_ID = process.env.DIFYUSER_ID || 'usr-0adc0770-a7e5-42f3-bc51-7d34f5cd0b92';
 
     if (!message?.trim()) {
       return NextResponse.json({ answer: '질문 내용을 입력해 주세요.' });
