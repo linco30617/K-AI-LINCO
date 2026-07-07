@@ -5,7 +5,7 @@ export async function POST(request: Request) {
     const { message, conversationId } = await request.json();
 
     // 🚀 로컬 파이썬 서버(FastAPI)로 사용자의 질문을 전달합니다.
-    const pythonServerUrl = 'https://python-wnj7.onrender.com';
+    const pythonServerUrl = 'python-delta-drab.vercel.app';
     
     const response = await fetch(pythonServerUrl, {
       method: 'POST',
