@@ -49,7 +49,7 @@ export default function LincoUltimatePage() {
   ];
 
   const SITE_LINKS = [
-   { label: '청년월세지원 바로가기', href: 'https://www.bokjiro.go.kr/ssis-tbu/index.do' },
+    { label: '청년월세지원 바로가기', href: 'https://www.bokjiro.go.kr/ssis-tbu/index.do' },
     { label: '청년도약계좌 바로가기', href: 'https://www.kinfa.or.kr/main.do' },
     { label: '청년구직활동지원금 바로가기', href: 'https://www.work24.go.kr/cm/main.do' },
     { label: '청년소득세감면 바로가기', href: 'https://hometax.go.kr/websquare/websquare.html?w2xPath=/ui/pp/index_pp.xml&menuCd=index3' },
