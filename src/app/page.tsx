@@ -149,13 +149,7 @@ export default function LincoUltimatePage() {
     }
   };
 
-  const normalizeAnswer = (text: string) => {
-    try {
-      return decodeURIComponent(escape(text));
-    } catch {
-      return text;
-    }
-  };
+  const normalizeAnswer = (text: string) => text;
 
   const executeSend = async (text: string) => {
     if (!text.trim() || isLoading) return;
@@ -166,17 +160,14 @@ export default function LincoUltimatePage() {
     setIsLoading(true);
 
     try {
-       const response = await fetch('http://localhost/v1', {
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer app-EbKM7jzjI2o8jo2Q4H0SggIz', // 유저님이 넣으신 키 유지
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          inputs: {},
-          query: text,
-          user: "linco-user",
-          response_mode: "blocking"
+          message: text,
+          conversationId: '',
         }),
       });
 
@@ -184,8 +175,8 @@ export default function LincoUltimatePage() {
         throw new Error('API 요청에 실패했습니다.');
       }
       const data = await response.json();
-      const aiAnswer = normalizeAnswer(String(data.answer || '죄송합니다. 답변을 생성하지 못했습니다.'));
-      
+      const aiAnswer = normalizeAnswer(String(data.answer || data.error || '죄송합니다. 답변을 생성하지 못했습니다.'));
+
       setMessages(prev => [...prev, { id: Date.now(), sender: 'ai', text: aiAnswer }]);
     } catch (error) {
       console.error('Dify API 오류:', error);
