@@ -32,7 +32,6 @@ export default function LincoUltimatePage() {
   const cardTextClass = isDark ? 'text-slate-300' : 'text-slate-700';
   const cardMutedTextClass = isDark ? 'text-slate-400' : 'text-slate-600';
 
-  // 📝 원래 HTML에 들어있던 6대 프레임워크 백서 상세 콘텐츠 전체 반영
   const TAB_ITEMS = [
     { value: 'chat' as const, label: 'AI 비서' },
     { value: 'guide' as const, label: '질문 가이드 및 설명서' },
@@ -40,9 +39,10 @@ export default function LincoUltimatePage() {
     { value: 'overview' as const, label: '서비스 개요' },
   ];
 
+  // 단일 관리 및 원클릭/태그 버튼용 표준 데이터셋
   const TAG_OPTIONS = [
     { label: '청년월세지원', query: '청년월세지원 정책의 구체적인 지원 내용과 내가 받을 수 있는 혜택이 뭐야? 나이, 소득 기준이랑 신청 서류도 같이 알려줘.' },
-    { label: '청년도약계좌', query: '청년도약계좌로 목돈을 마련하고 싶은데, 가입 자격(소득·재산) 조건이 어떻게 돼? 매달 얼마씩 모으면 최종적으로 얼마를 받으면 최종적으로 얼마를 받는지 계산해 줘.' },
+    { label: '청년도약계좌', query: '청년도약계좌로 목돈을 마련하고 싶은데, 가입 자격(소득·재산) 조건이 어떻게 돼? 매달 얼마씩 모으면 최종적으로 얼마를 받는지 계산해 줘.' },
     { label: '청년구직활동지원금', query: '청년구직활동지원금은 미취업 청년이면 누구나 받을 수 있어? 구직 단념 청년이나 취업 준비생을 위한 구체적인 지원 금액이랑 고용24 신청 방법을 알려줘.' },
     { label: '청년소득세감면', query: '중소기업에 취업하거나 창업한 청년을 위한 청년 소득세 감면 제도의 혜택 비율이 어떻게 돼? 회사나 홈택스에서 어떻게 신청하는지 주의사항과 함께 알려줘.' },
     { label: '청년버팀목전세자금대출', query: '청년 버팀목 전세자금 대출의 한도와 금리 우대 조건이 궁금해. 주택드림 청약대출 같은 다른 청년 주거 금융 정책과 비교해서 나에게 더 유리한 걸 추천해 줘.' }
@@ -160,35 +160,40 @@ export default function LincoUltimatePage() {
   const executeSend = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
-    setMessages(prev => [...prev, { id: Date.now(), sender: 'user', text }]);
+    const userMessageId = Date.now();
+    setMessages(prev => [...prev, { id: userMessageId, sender: 'user', text }]);
     setInput('');
     setIsLoading(true);
 
     try {
-      // 현재 코드의 119번째 줄 근처
-const response = await fetch('/api/chat', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    message: text, // 또는 text 대신 query 등
-  }),
-});
+       const response = await fetch('http://localhost/v1', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer app-EbKM7jzjI2o8jo2Q4H0SggIz', // 유저님이 넣으신 키 유지
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: {},
+          query: text,
+          user: "linco-user",
+          response_mode: "blocking"
+        }),
+      });
 
       if (!response.ok) {
         throw new Error('API 요청에 실패했습니다.');
       }
-
       const data = await response.json();
-      const aiAnswer = normalizeAnswer(String(data.answer || '답변을 가져오지 못했습니다.'));
-      setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'ai', text: aiAnswer }]);
+      const aiAnswer = normalizeAnswer(String(data.answer || '죄송합니다. 답변을 생성하지 못했습니다.'));
+      
+      setMessages(prev => [...prev, { id: Date.now(), sender: 'ai', text: aiAnswer }]);
     } catch (error) {
-      console.error('Error sending message:', error);
-      setMessages(prev => [
-        ...prev,
-        { id: Date.now() + 1, sender: 'ai', text: '⚠️ 에러가 발생했습니다. API 연결 상태를 확인해 주세요.' },
-      ]);
+      console.error('Dify API 오류:', error);
+      const errorMessage = error instanceof Error 
+        ? `⚠️ 오류: ${error.message}` 
+        : '⚠️ 링코가 잠시 자리를 비웠어요. Dify 연결을 확인해 주세요.';
+      
+      setMessages(prev => [...prev, { id: Date.now(), sender: 'ai', text: errorMessage }]);
     } finally {
       setIsLoading(false);
     }
@@ -242,15 +247,9 @@ const response = await fetch('/api/chat', {
               <div ref={chatEndRef} />
             </div>
 
-            {/* 새 가이드북 기반 맞춤형 키워드 해시태그 */}
+            {/* 교정 부분: 하단 해시태그 버튼 클릭 시 executeSend(tag.query) 원활하게 바인딩 완료 */}
             <div className="flex flex-wrap gap-2.5 px-10 mb-5">
-              {[
-                { label: '청년월세지원', query: '청년월세지원 정책의 구체적인 지원 내용과 내가 받을 수 있는 혜택이 뭐야? 나이, 소득 기준이랑 신청 서류도 같이 알려줘.' },
-                { label: '청년도약계좌', query: '청년도약계좌로 목돈을 마련하고 싶은데, 가입 자격(소득·재산) 조건이 어떻게 돼? 매달 얼마씩 모으면 최종적으로 얼마를 받는지 계산해 줘.' },
-                { label: '청년구직활동지원금', query: '청년구직활동지원금은 미취업 청년이면 누구나 받을 수 있어? 구직 단념 청년이나 취업 준비생을 위한 구체적인 지원 금액이랑 고용24 신청 방법을 알려줘.' },
-                { label: '청년소득세감면', query: '중소기업에 취업하거나 창업한 청년을 위한 청년 소득세 감면 제도의 혜택 비율이 어떻게 돼? 회사나 홈택스에서 어떻게 신청하는지 주의사항과 함께 알려줘.' },
-                { label: '청년버팀목전세자금대출', query: '청년 버팀목 전세자금 대출의 한도와 금리 우대 조건이 궁금해. 주택드림 청약대출 같은 다른 청년 주거 금융 정책과 비교해서 나에게 더 유리한 걸 추천해 줘.' }
-              ].map(tag => (
+              {TAG_OPTIONS.map(tag => (
                 <button key={tag.label} type="button" onClick={() => executeSend(tag.query)} className={`text-[13px] font-semibold border rounded-full px-4 py-2.5 cursor-pointer transition-all ${tagButtonClass}`}># {tag.label}</button>
               ))}
             </div>
@@ -331,6 +330,7 @@ const response = await fetch('/api/chat', {
             </div>
           </div>
         )}
+        
         {activeTab === 'site' && (
           <div className="w-full h-full p-12 box-border overflow-y-auto max-w-4xl">
             <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-3">
@@ -352,7 +352,6 @@ const response = await fetch('/api/chat', {
         {/* SERVICE OVERVIEW TAB */}
         {activeTab === 'overview' && (
           <div className="w-full h-full p-12 box-border overflow-hidden relative">
-            {/* 목록 페이지 */}
             <div className={`transition-all duration-500 ease-out absolute inset-0 p-12 overflow-y-auto ${activeDetail ? '-translate-x-full opacity-0' : 'translate-x-0 opacity-100'}`} style={{ pointerEvents: activeDetail ? 'none' : 'auto' }}>
               <h1 className={`text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Service Overview</h1>
               <span className={`${mutedTextClass} text-[15px] font-medium block mt-1.5 mb-10`}>일상의 핵심 난제 해결을 위한 6대 프레임워크 백서</span>
@@ -371,7 +370,6 @@ const response = await fetch('/api/chat', {
               </div>
             </div>
 
-            {/* 상세 페이지 */}
             <div className={`transition-all duration-500 ease-out absolute inset-0 p-12 overflow-y-auto ${activeDetail ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`} style={{ pointerEvents: activeDetail ? 'auto' : 'none' }}>
               <div className="max-w-4xl mx-auto py-4">
                 <button onClick={() => setActiveDetail(null)} className={`text-[14.5px] font-semibold flex items-center gap-2 mb-8 bg-transparent border-none cursor-pointer ${mutedTextClass}`}>
