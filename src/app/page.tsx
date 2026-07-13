@@ -58,7 +58,7 @@ const MAIN_TABS: Array<{ value: MainTab; label: string; description: string }> =
   { value: 'chat', label: 'AI 비서', description: '대화와 저장' },
   { value: 'guide', label: '사용 안내', description: '기능 사용법' },
   { value: 'site', label: '바로가기', description: '외부 링크' },
-  { value: 'overview', label: '서비스 개요', description: '핵심 소개' },
+  { value: 'overview', label: '서비스 개요', description: '백서 슬라이드' },
 ]
 
 const SECONDARY_TABS: Array<{ value: MainTab; label: string; description: string }> = [
@@ -221,6 +221,7 @@ export default function LincoPage() {
   const [assistantSidebarOpen, setAssistantSidebarOpen] = useState<boolean>(() => getBootstrap().assistantSidebarOpen)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [activeDetail, setActiveDetail] = useState<string | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>(() => getBootstrap().conversations)
   const [activeConversationId, setActiveConversationId] = useState<string>(() => getBootstrap().activeConversationId)
   const chatEndRef = useRef<HTMLDivElement | null>(null)
@@ -270,14 +271,6 @@ export default function LincoPage() {
 
   const updateConversations = (updater: (previous: Conversation[]) => Conversation[]) => {
     setConversations((previous) => updater(previous))
-  }
-
-  const createNewConversation = () => {
-    const nextConversation = createConversation()
-    setConversations((previous) => [nextConversation, ...previous])
-    setActiveConversationId(nextConversation.id)
-    setActiveTab('chat')
-    setAssistantSidebarOpen(true)
   }
 
   const deleteConversation = (conversationId: string) => {
@@ -426,7 +419,10 @@ export default function LincoPage() {
                 <button
                   key={tab.value}
                   type="button"
-                  onClick={() => setActiveTab(tab.value)}
+                  onClick={() => {
+                    setActiveTab(tab.value)
+                    setActiveDetail(null)
+                  }}
                   className={`${tabBaseClass} ${isActive ? tabActiveClass : tabInactiveClass}`}
                 >
                   <span className="flex flex-col items-start">
@@ -483,28 +479,10 @@ export default function LincoPage() {
                         닫기
                       </button>
                     </div>
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={createNewConversation}
-                        className="rounded-lg border border-sky-400 bg-sky-500 px-3 py-2 text-xs font-bold text-white"
-                      >
-                        새 채팅
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteConversation(activeConversationId)}
-                        className={`rounded-lg border px-3 py-2 text-xs font-bold ${
-                          isDark ? 'border-rose-400/60 text-rose-200 hover:bg-rose-500/10' : 'border-rose-300 text-rose-700 hover:bg-rose-50'
-                        }`}
-                      >
-                        채팅 삭제
-                      </button>
-                    </div>
                   </div>
 
                   <div className="flex-1 overflow-y-auto pr-1 space-y-2">
-                    {conversations.map((conversation, index) => {
+                    {conversations.map((conversation) => {
                       const active = conversation.id === activeConversationId
                       return (
                         <button
@@ -522,15 +500,22 @@ export default function LincoPage() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className="font-semibold truncate">{conversation.title}</div>
-                              <div className={`text-[11px] mt-1 ${mutedTextClass}`}>{conversation.messages.length}개 메시지</div>
                             </div>
-                            <div className={`text-[11px] whitespace-nowrap ${mutedTextClass}`}>#{index + 1}</div>
                           </div>
-                          <div className={`mt-3 text-[11px] ${mutedTextClass}`}>저장 #{conversation.updatedAt}</div>
                         </button>
                       )
                     })}
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => deleteConversation(activeConversationId)}
+                    className={`rounded-xl border px-4 py-3 text-sm font-bold ${
+                      isDark ? 'border-rose-400/60 text-rose-200 hover:bg-rose-500/10' : 'border-rose-300 text-rose-700 hover:bg-rose-50'
+                    }`}
+                  >
+                    채팅 삭제
+                  </button>
                 </div>
               </aside>
 
@@ -545,22 +530,6 @@ export default function LincoPage() {
                     <div className={`text-sm ${mutedTextClass}`}>
                       {currentConversation?.title ?? '새 채팅'} · 저장된 대화 {conversations.length}개
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setAssistantSidebarOpen((previous) => !previous)}
-                      className={`rounded-lg border px-3 py-2 text-sm font-semibold ${controlButtonClass}`}
-                    >
-                      {assistantSidebarOpen ? '목록 숨기기' : '목록 열기'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={createNewConversation}
-                      className="rounded-lg border border-sky-400 bg-sky-500 px-3 py-2 text-sm font-bold text-white"
-                    >
-                      새 채팅
-                    </button>
                   </div>
                 </header>
 
@@ -653,7 +622,7 @@ export default function LincoPage() {
                 <div className="mx-auto max-w-5xl">
                   <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">사용 안내</h1>
                   <p className={`mt-3 max-w-3xl text-[15px] leading-relaxed ${mutedTextClass}`}>
-                    왼쪽 탭을 선택해 기능을 바꾸고, AI 비서에서는 대화를 저장하면서 이어갈 수 있습니다.
+                    왼쪽 탭으로 기능을 바꾸고, AI 비서에서는 대화를 저장한 상태로 이어서 사용할 수 있습니다.
                   </p>
 
                   <div className="mt-8 grid gap-4">
@@ -661,13 +630,21 @@ export default function LincoPage() {
                       <h2 className="text-lg font-bold mb-2">AI 비서 사용법</h2>
                       <p className={`${mutedTextClass} leading-relaxed`}>
                         AI 비서 탭을 열면 대화 목록 패널이 함께 나타납니다. 새 채팅을 만들거나 기존 대화를 선택할 수 있고,
-                        삭제 버튼으로 현재 채팅을 제거할 수 있습니다.
+                        삭제 버튼으로 현재 채팅을 지울 수 있습니다.
                       </p>
                     </div>
                     <div className={`rounded-xl border p-6 ${panelClass}`}>
-                      <h2 className="text-lg font-bold mb-2">빠른 질문 버튼</h2>
+                      <h2 className="text-lg font-bold mb-2">해시태그 버튼 사용</h2>
                       <p className={`${mutedTextClass} leading-relaxed`}>
-                        아래 해시태그 버튼을 누르면 미리 준비된 질문이 바로 입력되어 빠르게 답을 받을 수 있습니다.
+                        아래 해시태그 버튼을 누르면 미리 준비된 질문이 바로 입력됩니다. 자주 묻는 질문을 빠르게 던질 때
+                        편하게 사용할 수 있습니다.
+                      </p>
+                    </div>
+                    <div className={`rounded-xl border p-6 ${panelClass}`}>
+                      <h2 className="text-lg font-bold mb-2">직접 질문하기</h2>
+                      <p className={`${mutedTextClass} leading-relaxed`}>
+                        입력창에 궁금한 내용을 직접 적으면 됩니다. 정책명, 대상 조건, 준비 서류처럼 구체적으로 적을수록
+                        더 정확한 답을 받기 좋습니다.
                       </p>
                     </div>
                   </div>
@@ -699,27 +676,78 @@ export default function LincoPage() {
               )}
 
               {activeTab === 'overview' && (
-                <div className="mx-auto max-w-5xl">
-                  <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">서비스 개요</h1>
-                  <p className={`mt-3 max-w-3xl text-[15px] leading-relaxed ${mutedTextClass}`}>
-                    서비스 카드들을 통해 필요한 정보를 더 빠르게 찾아갈 수 있게 구성했습니다.
-                  </p>
+                <div className="relative h-full min-h-[60vh] overflow-hidden">
+                  <div
+                    className={`absolute inset-0 transition-all duration-500 ease-out ${
+                      activeDetail ? '-translate-x-full opacity-0' : 'translate-x-0 opacity-100'
+                    }`}
+                    style={{ pointerEvents: activeDetail ? 'none' : 'auto' }}
+                  >
+                    <div className="mx-auto max-w-5xl">
+                      <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">서비스 개요</h1>
+                      <p className={`mt-3 max-w-3xl text-[15px] leading-relaxed ${mutedTextClass}`}>
+                        서비스 카드들을 통해 필요한 정보를 더 빠르게 찾아갈 수 있게 구성했습니다. 카드를 누르면 백서처럼
+                        상세 페이지로 이동합니다.
+                      </p>
 
-                  <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {Object.entries(CATEGORY_DATA).map(([key, item]) => (
-                      <div key={key} className={`rounded-xl border p-6 ${cardClass}`}>
-                        <div className="text-sm font-mono font-bold text-sky-400">{item.num}</div>
-                        <h2 className="mt-2 text-xl font-bold">{item.title}</h2>
-                        <p className={`mt-2 text-sm ${mutedTextClass}`}>{item.subtitle}</p>
-                        <ul className={`mt-4 space-y-2 text-sm ${mutedTextClass}`}>
-                          {item.bullets.map((bullet) => (
-                            <li key={bullet} className="list-disc ml-4">
-                              {bullet}
-                            </li>
-                          ))}
-                        </ul>
+                      <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {Object.entries(CATEGORY_DATA).map(([key, item]) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setActiveDetail(key)}
+                            className={`text-left rounded-xl border p-6 transition-all duration-300 hover:-translate-y-1 hover:border-sky-400 ${cardClass}`}
+                          >
+                            <div className="text-sm font-mono font-bold text-sky-400">{item.num}</div>
+                            <h2 className="mt-2 text-xl font-bold">{item.title}</h2>
+                            <p className={`mt-2 text-sm ${mutedTextClass}`}>{item.subtitle}</p>
+                            <div className="mt-6 text-sm font-bold text-sky-400">백서 슬라이드로 이동 →</div>
+                          </button>
+                        ))}
                       </div>
-                    ))}
+                    </div>
+                  </div>
+
+                  <div
+                    className={`absolute inset-0 transition-all duration-500 ease-out ${
+                      activeDetail ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+                    }`}
+                    style={{ pointerEvents: activeDetail ? 'auto' : 'none' }}
+                  >
+                    <div className="mx-auto max-w-4xl">
+                      <button
+                        type="button"
+                        onClick={() => setActiveDetail(null)}
+                        className={`mb-8 rounded-lg border px-3 py-2 text-sm font-semibold ${controlButtonClass}`}
+                      >
+                        ← 목록으로 돌아가기
+                      </button>
+                      {activeDetail && (
+                        <div className={`rounded-2xl border p-8 ${panelClass}`}>
+                          <div className="text-sm font-mono font-bold text-sky-400 mb-3">{CATEGORY_DATA[activeDetail].num}</div>
+                          <h2 className="text-3xl font-extrabold tracking-tight">{CATEGORY_DATA[activeDetail].title}</h2>
+                          <div
+                            className={`mt-3 pb-5 border-b ${
+                              isDark ? 'border-slate-700/60 text-slate-400' : 'border-slate-200 text-slate-600'
+                            }`}
+                          >
+                            {CATEGORY_DATA[activeDetail].subtitle}
+                          </div>
+                          <div className="mt-6 space-y-3">
+                            {CATEGORY_DATA[activeDetail].bullets.map((bullet) => (
+                              <div
+                                key={bullet}
+                                className={`rounded-xl border px-4 py-3 ${
+                                  isDark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-slate-50'
+                                }`}
+                              >
+                                {bullet}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -783,11 +811,11 @@ export default function LincoPage() {
         <button
           type="button"
           onClick={() => setAssistantSidebarOpen(true)}
-          className={`fixed left-[276px] top-1/2 -translate-y-1/2 rounded-r-xl border-y border-r px-3 py-4 text-xs font-bold shadow-lg ${
+          className={`fixed left-[276px] top-1/2 -translate-y-1/2 rounded-r-xl border-y border-r px-3 py-5 text-[11px] font-bold tracking-[0.2em] uppercase shadow-lg ${
             isDark ? 'border-slate-700 bg-slate-950 text-slate-100' : 'border-slate-200 bg-white text-slate-900'
           }`}
         >
-          목록 열기
+          대화목록
         </button>
       )}
     </div>
