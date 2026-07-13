@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const message = readString(body?.message ?? body?.query)
     const conversationId = readString(body?.conversationId ?? body?.conversation_id)
 
-    const difyUrl = process.env.DIFY_API_URL || 'http://localhost/v1'
+    const difyUrl = process.env.DIFY_API_URL || 'http://localhost/v1/chat-messages'
     const difyKey = process.env.DIFY_API_KEY || 'app-JA4vN5714g2Nd5ftpyFgN49g'
 
     if (!message.trim()) {
