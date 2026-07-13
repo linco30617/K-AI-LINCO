@@ -32,9 +32,9 @@ export async function POST(request: Request) {
     const message = readString(body?.message ?? body?.query)
     const conversationId = readString(body?.conversationId ?? body?.conversation_id)
 
-    const difyEndpoint = normalizeDifyEndpoint(process.env.DIFY_API_URL || '')
-    const difyKey = process.env.DIFY_API_KEY || ''
-    const difyUserId = process.env.DIFY_API_USER_ID || 'linco-web-user'
+    const difyEndpoint = normalizeDifyEndpoint(process.env.DIFY_API_URL || 'http://localhost/v1')
+    const difyKey = process.env.DIFY_API_KEY || 'app-pvPv6r8cyOf8tN7KS4ylsGhk'
+    const difyUserId = process.env.DIFY_API_USER_ID || 'a7c4c63e-32f9-43df-9913-a0e112795052'
 
     if (!message.trim()) {
       return NextResponse.json({ answer: '질문 내용을 입력해 주세요.' })
