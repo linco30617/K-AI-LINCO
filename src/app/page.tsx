@@ -349,7 +349,7 @@ export default function LincoPage() {
       }
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || '응답을 가져오지 못했습니다.')
+        throw new Error(data.error || data.message || data.answer || '응답을 가져오지 못했습니다.')
       }
 
       const answer = data.answer ?? data.message ?? '응답이 비어 있습니다.'

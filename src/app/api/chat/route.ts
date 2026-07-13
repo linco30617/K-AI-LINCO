@@ -88,6 +88,8 @@ export async function POST(request: Request) {
     if (!response.ok) {
       return NextResponse.json(
         {
+          error: `Dify API 오류: ${responseError}`,
+          message: `Dify API 오류: ${responseError}`,
           answer: `Dify API 오류: ${responseError}`,
           conversation_id: conversationId,
           status: response.status,

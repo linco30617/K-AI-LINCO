@@ -29,9 +29,9 @@ export interface ChatMessage {
 
 // Dify API 설정
 export const DIFY_CONFIG = {
-  apiUrl: process.env.NEXT_PUBLIC_DIFY_API_URL || 'http://localhost/v1',
-  apiKey: process.env.DIFY_API_KEY || 'app-JA4vN5714g2Nd5ftpyFgN49g',
-  userId: process.env.DIFY_USER_ID || 'usr-0adc0770-a7e5-42f3-bc51-7d34f5cd0b92',
+  apiUrl: process.env.NEXT_PUBLIC_DIFY_API_URL || 'http://localhost/v1/chat-messages',
+  apiKey: process.env.DIFY_API_KEY || 'app-pvPv6r8cyOf8tN7KS4ylsGhk',
+  userId: process.env.DIFY_USER_ID || 'a7c4c63e-32f9-43df-9913-a0e112795052',
 };
 
 // Dify API 호출 함수
