@@ -49,12 +49,9 @@ export async function POST(request: Request) {
       )
     }
 
-    const instruction =
-      '다음 지침을 지켜서 답변해 주세요.\n- 한국어만 사용합니다.\n- 이모지와 특수기호는 최소한으로 씁니다.\n- 짧고 명확하게 답합니다.\n\n'
-
     const payload: Record<string, unknown> = {
       inputs: {},
-      query: `${instruction}${message}`,
+      query: message,
       response_mode: 'blocking',
       user: difyUserId,
     }
