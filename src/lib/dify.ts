@@ -40,7 +40,7 @@ function normalizeDifyEndpoint(value: string) {
 }
 
 export const DIFY_CONFIG = {
-  apiUrl: normalizeDifyEndpoint(process.env.DIFY_API_URL || process.env.NEXT_PUBLIC_DIFY_API_URL || 'http://localhost/v1/chat-messages'),
+  apiUrl: normalizeDifyEndpoint(process.env.DIFY_API_URL || process.env.NEXT_PUBLIC_DIFY_API_URL || 'http://localhost/v1/'),
   apiKey: process.env.DIFY_API_KEY || 'app-pvPv6r8cyOf8tN7KS4ylsGhk',
   userId: process.env.DIFY_API_USER_ID || process.env.DIFY_USER_ID || 'a7c4c63e-32f9-43df-9913-a0e112795052',
 }
