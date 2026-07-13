@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { FormEvent, useEffect, useRef, useState } from 'react'
 
 type ThemeMode = 'dark' | 'light'
@@ -21,24 +22,24 @@ interface Conversation {
   updatedAt: number
 }
 
-interface CategoryDetail {
-  num: string
-  title: string
-  subtitle: string
-  bullets: string[]
-}
-
-type ChatBootstrap = {
+type BootstrapState = {
   conversations: Conversation[]
   activeConversationId: string
   assistantSidebarOpen: boolean
   theme: ThemeMode
 }
 
-let conversationSerial = 0
-let messageSerial = 0
-let activitySerial = 0
-let bootstrapCache: ChatBootstrap | null = null
+type CategoryDetail = {
+  num: string
+  title: string
+  subtitle: string
+  bullets: string[]
+}
+
+let conversationSeed = 0
+let messageSeed = 0
+let activitySeed = 0
+let bootstrapCache: BootstrapState | null = null
 
 const STORAGE_KEYS = {
   conversations: 'linco.chat.conversations.v1',
@@ -58,16 +59,19 @@ const MAIN_TABS: Array<{ value: MainTab; label: string; description: string }> =
   { value: 'guide', label: '사용 안내', description: '기능 사용법' },
   { value: 'site', label: '바로가기', description: '외부 링크' },
   { value: 'overview', label: '서비스 개요', description: '핵심 소개' },
+]
+
+const SECONDARY_TABS: Array<{ value: MainTab; label: string; description: string }> = [
   { value: 'roadmap', label: '로드맵', description: '향후 계획' },
   { value: 'settings', label: '설정', description: '테마 전환' },
 ]
 
 const TAG_OPTIONS = [
-  { label: '정책 요약', query: '주요 정책을 3줄로 요약해줘.' },
-  { label: '자격 조건', query: '신청 자격 조건을 항목별로 정리해줘.' },
-  { label: '준비 서류', query: '준비해야 할 서류를 체크리스트로 알려줘.' },
-  { label: '진행 순서', query: '신청 절차를 단계별로 설명해줘.' },
-  { label: '비용 안내', query: '비용이나 지원 금액이 어떻게 되는지 설명해줘.' },
+  { label: '청년정책', query: '청년정책 중 지금 신청할 수 있는 것만 정리해줘.' },
+  { label: '전월세보증금', query: '청년 전월세 보증금 지원 조건을 알려줘.' },
+  { label: '주거지원금', query: '주거 지원금 신청 방법을 쉽게 설명해줘.' },
+  { label: '긴급복지', query: '긴급복지 지원 대상과 신청 절차를 알려줘.' },
+  { label: '기초생활', query: '기초생활보장제도 신청 조건을 요약해줘.' },
 ]
 
 const SITE_LINKS = [
@@ -83,7 +87,7 @@ const CATEGORY_DATA: Record<string, CategoryDetail> = {
     num: '01',
     title: '행정 절차 안내',
     subtitle: '복잡한 공공 서비스 신청 흐름을 한 번에 정리하는 카드',
-    bullets: ['절차를 단계별로 분해해서 보여줍니다.', '필요한 서류와 주의점을 함께 표시합니다.', '초보자용 문장으로 쉽게 읽히게 구성합니다.'],
+    bullets: ['절차를 단계별로 분해해서 보여줍니다.', '필요한 서류와 주의점을 함께 표시합니다.', '초보자도 읽기 쉬운 문장으로 정리합니다.'],
   },
   housing: {
     num: '02',
@@ -118,48 +122,46 @@ const CATEGORY_DATA: Record<string, CategoryDetail> = {
 }
 
 function parseSuffix(value: string) {
-  const parts = value.split('-')
-  const parsed = Number(parts[parts.length - 1])
+  const parsed = Number(value.split('-').at(-1))
   return Number.isFinite(parsed) ? parsed : 0
 }
 
 function syncCounters(conversations: Conversation[]) {
   for (const conversation of conversations) {
-    conversationSerial = Math.max(conversationSerial, parseSuffix(conversation.id))
-    activitySerial = Math.max(activitySerial, conversation.updatedAt)
-
+    conversationSeed = Math.max(conversationSeed, parseSuffix(conversation.id))
+    activitySeed = Math.max(activitySeed, conversation.updatedAt)
     for (const message of conversation.messages) {
-      messageSerial = Math.max(messageSerial, parseSuffix(message.id))
+      messageSeed = Math.max(messageSeed, parseSuffix(message.id))
     }
   }
 }
 
 function createGreetingMessage() {
-  messageSerial += 1
-  return { ...DEFAULT_GREETING, id: `welcome-${messageSerial}` }
+  messageSeed += 1
+  return { ...DEFAULT_GREETING, id: `welcome-${messageSeed}` }
 }
 
-function createConversation() {
-  conversationSerial += 1
-  activitySerial += 1
+function createConversation(): Conversation {
+  conversationSeed += 1
+  activitySeed += 1
   return {
-    id: `conv-${conversationSerial}`,
+    id: `conv-${conversationSeed}`,
     title: '새 채팅',
     messages: [createGreetingMessage()],
     conversationId: '',
-    createdAt: activitySerial,
-    updatedAt: activitySerial,
-  } satisfies Conversation
+    createdAt: activitySeed,
+    updatedAt: activitySeed,
+  }
 }
 
 function createMessageId(prefix: string) {
-  messageSerial += 1
-  return `${prefix}-${messageSerial}`
+  messageSeed += 1
+  return `${prefix}-${messageSeed}`
 }
 
 function nextActivityTick() {
-  activitySerial += 1
-  return activitySerial
+  activitySeed += 1
+  return activitySeed
 }
 
 function safeParseConversations(raw: string | null) {
@@ -172,10 +174,8 @@ function safeParseConversations(raw: string | null) {
   }
 }
 
-function getBootstrap() {
-  if (bootstrapCache) {
-    return bootstrapCache
-  }
+function getBootstrap(): BootstrapState {
+  if (bootstrapCache) return bootstrapCache
 
   const defaultConversation = createConversation()
 
@@ -199,9 +199,10 @@ function getBootstrap() {
 
   bootstrapCache = {
     conversations,
-    activeConversationId: activeConversationId && conversations.some((item) => item.id === activeConversationId)
-      ? activeConversationId
-      : conversations[0].id,
+    activeConversationId:
+      activeConversationId && conversations.some((item) => item.id === activeConversationId)
+        ? activeConversationId
+        : conversations[0].id,
     assistantSidebarOpen: assistantSidebarOpen ? assistantSidebarOpen === 'open' : true,
     theme: theme === 'light' ? 'light' : 'dark',
   }
@@ -258,9 +259,7 @@ export default function LincoPage() {
   const inputClass = isDark
     ? 'bg-slate-950 text-slate-100 border-slate-700 placeholder:text-slate-500'
     : 'bg-white text-slate-900 border-slate-300 placeholder:text-slate-500'
-
-  const tabBaseClass =
-    'w-full text-left border rounded-lg px-4 py-3 transition-all duration-200 flex items-center justify-between gap-3'
+  const tabBaseClass = 'w-full text-left border rounded-lg px-4 py-3 transition-all duration-200 flex items-center justify-between gap-3'
   const tabInactiveClass = isDark
     ? 'border-slate-700/80 bg-slate-950/30 text-slate-300 hover:bg-slate-800/80 hover:border-sky-400/60'
     : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-sky-400/70'
@@ -269,7 +268,7 @@ export default function LincoPage() {
     ? 'border-slate-700 bg-slate-950/40 text-slate-100 hover:border-sky-400/70 hover:bg-slate-900'
     : 'border-slate-300 bg-white text-slate-900 hover:border-sky-400/70 hover:bg-slate-50'
 
-  const setConversationsAndPersist = (updater: (previous: Conversation[]) => Conversation[]) => {
+  const updateConversations = (updater: (previous: Conversation[]) => Conversation[]) => {
     setConversations((previous) => updater(previous))
   }
 
@@ -282,7 +281,7 @@ export default function LincoPage() {
   }
 
   const deleteConversation = (conversationId: string) => {
-    setConversationsAndPersist((previous) => {
+    updateConversations((previous) => {
       const remaining = previous.filter((conversation) => conversation.id !== conversationId)
       if (remaining.length === 0) {
         const freshConversation = createConversation()
@@ -308,13 +307,9 @@ export default function LincoPage() {
     if (!trimmed || isLoading || !currentConversation) return
 
     const assistantPlaceholderId = createMessageId('assistant')
-    const userMessage: Message = {
-      id: createMessageId('user'),
-      sender: 'user',
-      text: trimmed,
-    }
+    const userMessage: Message = { id: createMessageId('user'), sender: 'user', text: trimmed }
 
-    setConversationsAndPersist((previous) =>
+    updateConversations((previous) =>
       previous.map((conversation) => {
         if (conversation.id !== currentConversation.id) return conversation
 
@@ -359,7 +354,7 @@ export default function LincoPage() {
       const answer = data.answer ?? data.message ?? '응답이 비어 있습니다.'
       const remoteConversationId = data.conversation_id ?? data.conversationId ?? currentConversation.conversationId
 
-      setConversationsAndPersist((previous) =>
+      updateConversations((previous) =>
         previous.map((conversation) => {
           if (conversation.id !== currentConversation.id) return conversation
 
@@ -379,7 +374,7 @@ export default function LincoPage() {
       )
     } catch (error) {
       const errorText = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
-      setConversationsAndPersist((previous) =>
+      updateConversations((previous) =>
         previous.map((conversation) => {
           if (conversation.id !== currentConversation.id) return conversation
 
@@ -415,12 +410,12 @@ export default function LincoPage() {
           }`}
         >
           <div className={`rounded-xl border px-4 py-4 ${cardClass}`}>
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Image src="/LINCO.png" alt="LINCO 로고" width={96} height={32} className="h-8 w-auto object-contain" />
               <div>
                 <div className="text-xl font-bold tracking-tight">LINCO</div>
                 <div className={`text-xs mt-1 ${mutedTextClass}`}>공공 정보와 AI 비서를 한곳에</div>
               </div>
-              <div className={`h-10 w-10 rounded-lg border ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`} />
             </div>
           </div>
 
@@ -431,9 +426,7 @@ export default function LincoPage() {
                 <button
                   key={tab.value}
                   type="button"
-                  onClick={() => {
-                    setActiveTab(tab.value)
-                  }}
+                  onClick={() => setActiveTab(tab.value)}
                   className={`${tabBaseClass} ${isActive ? tabActiveClass : tabInactiveClass}`}
                 >
                   <span className="flex flex-col items-start">
@@ -446,28 +439,24 @@ export default function LincoPage() {
             })}
           </nav>
 
-          <div className={`rounded-xl border p-4 ${cardClass}`}>
-            <div className="text-sm font-semibold mb-3">테마</div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setTheme('dark')}
-                className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
-                  theme === 'dark' ? 'border-sky-400 bg-sky-500 text-white' : controlButtonClass
-                }`}
-              >
-                Dark
-              </button>
-              <button
-                type="button"
-                onClick={() => setTheme('light')}
-                className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors ${
-                  theme === 'light' ? 'border-sky-400 bg-sky-500 text-white' : controlButtonClass
-                }`}
-              >
-                Light
-              </button>
-            </div>
+          <div className="mt-auto flex flex-col gap-2">
+            {SECONDARY_TABS.map((tab) => {
+              const isActive = activeTab === tab.value
+              return (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => setActiveTab(tab.value)}
+                  className={`${tabBaseClass} ${isActive ? tabActiveClass : tabInactiveClass}`}
+                >
+                  <span className="flex flex-col items-start">
+                    <span className="text-[14px] font-semibold">{tab.label}</span>
+                    <span className={`text-[11px] ${isActive ? 'text-white/80' : 'text-inherit opacity-70'}`}>{tab.description}</span>
+                  </span>
+                  <span className={`text-xs ${isActive ? 'text-white/80' : 'opacity-60'}`}>▸</span>
+                </button>
+              )
+            })}
           </div>
         </aside>
 
