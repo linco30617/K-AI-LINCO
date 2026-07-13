@@ -1,43 +1,84 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server'
 
-export async function POST(req: Request) {
+type DifyResponseShape = {
+  answer?: unknown
+  message?: unknown
+  text?: unknown
+  error?: unknown
+  conversation_id?: unknown
+}
+
+function readString(value: unknown) {
+  return typeof value === 'string' ? value : ''
+}
+
+export async function POST(request: Request) {
   try {
-    const { message } = await req.json();
+    const body = await request.json()
+    const message = readString(body?.message ?? body?.query)
+    const conversationId = readString(body?.conversationId ?? body?.conversation_id)
 
-    // ⚡ 실제 발급받은 Dify 키를 꼭 확인해 주세요! (예: app-xxxx)
-    const DIFY_API_KEY = 'app-JA4vN5714g2Nd5ftpyFgN49g'; 
-    
-    // 만약 일반 챗봇이면 chat-messages, 채팅 플로우면 advanced-chat-messages를 씁니다.
-    // 안전하게 연동하기 위해 아래 주소 구조를 사용합니다.
-    const DIFY_API_URL = 'http://localhost:5001/v1/chat-messages';
+    const difyUrl = process.env.DIFY_API_URL || 'http://localhost/v1'
+    const difyKey = process.env.DIFY_API_KEY || 'app-JA4vN5714g2Nd5ftpyFgN49g'
 
-    const response = await fetch(DIFY_API_URL, {
+    if (!message.trim()) {
+      return NextResponse.json({ answer: '질문 내용을 입력해 주세요.' })
+    }
+
+    if (!difyKey) {
+      return NextResponse.json({
+        answer: '.env.local 에 DIFY_API_KEY 를 설정해 주세요.',
+      })
+    }
+
+    const instruction =
+      '다음 지침을 지켜서 답변해 주세요.\n- 한국어만 사용합니다.\n- 이모지와 특수기호는 최소한으로 씁니다.\n- 짧고 명확하게 답합니다.\n\n'
+
+    const response = await fetch(`${difyUrl}/chat-messages`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${DIFY_API_KEY}`,
+        Authorization: `Bearer ${difyKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         inputs: {},
-        query: message,
-        response_mode: 'blocking', // 실시간 스트리밍이 아닌 한 번에 받는 방식
-        user: 'linco-user-default',
+        query: `${instruction}${message}`,
+        response_mode: 'blocking',
+        user: 'linco-web-user',
+        conversation_id: conversationId,
       }),
-    });
+    })
 
-    if (!response.ok) {
-      // Dify 내부에서 에러가 났을 때 어떤 에러인지 터미널에 명확히 찍어줍니다.
-      const errorText = await response.text();
-      console.error('❌ Dify 자체 에러 반환:', response.status, errorText);
-      return NextResponse.json({ answer: `⚠️ Dify 엔진 오류 (${response.status})` });
+    const responseText = await response.text()
+    let data: DifyResponseShape = {}
+
+    try {
+      data = responseText ? (JSON.parse(responseText) as DifyResponseShape) : {}
+    } catch {
+      data = { message: responseText || 'Dify API 응답을 해석하지 못했습니다.' }
     }
 
-    const data = await response.json();
-    return NextResponse.json({ answer: data.answer });
+    const answer = readString(data.answer) || readString(data.message) || readString(data.text)
+    const responseConversationId = readString(data.conversation_id) || conversationId
+    const responseError = readString(data.message) || readString(data.error) || `Dify API 오류 (${response.status})`
 
+    if (!response.ok) {
+      return NextResponse.json(
+        {
+          answer: `Dify API 오류: ${responseError}`,
+          conversation_id: conversationId,
+        },
+        { status: response.status }
+      )
+    }
+
+    return NextResponse.json({
+      answer,
+      conversation_id: responseConversationId,
+      raw: data,
+    })
   } catch (error) {
-    // VS Code나 Next.js 실행 터미널 창에 에러의 실체를 정확히 출력합니다.
-    console.error('❌ Next.js 백엔드 Catch 에러 로그:', error);
-    return NextResponse.json({ answer: '⚠️ 링코 서버 통신 중 오류가 발생했습니다.' }, { status: 500 });
+    console.error('Dify API 연결 오류:', error)
+    return NextResponse.json({ error: 'Dify API 연결에 실패했습니다.' }, { status: 500 })
   }
 }

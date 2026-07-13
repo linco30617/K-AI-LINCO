@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "LINCO",
-  description: "LINCO AI 비서와 정책 정보를 다루는 대시보드",
+  description: "LINCO AI 비서와 정보 패널",
 };
 
 export default function RootLayout({
