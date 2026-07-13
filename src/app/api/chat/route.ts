@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     
     // 만약 일반 챗봇이면 chat-messages, 채팅 플로우면 advanced-chat-messages를 씁니다.
     // 안전하게 연동하기 위해 아래 주소 구조를 사용합니다.
-    const DIFY_API_URL = 'http://localhost/v1/chat-messages';
+    const DIFY_API_URL = 'http://localhost:5001/v1/chat-messages';
 
     const response = await fetch(DIFY_API_URL, {
       method: 'POST',
