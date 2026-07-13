@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     const conversationId = readString(body?.conversationId ?? body?.conversation_id)
 
     const difyUrl = process.env.DIFY_API_URL || 'http://localhost/v1/chat-messages'
-    const difyKey = process.env.DIFY_API_KEY || 'app-JA4vN5714g2Nd5ftpyFgN49g'
+    const difyKey = process.env.DIFY_API_KEY || 'app-pvPv6r8cyOf8tN7KS4ylsGhk'
 
     if (!message.trim()) {
       return NextResponse.json({ answer: '질문 내용을 입력해 주세요.' })
