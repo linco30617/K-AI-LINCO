@@ -1,7 +1,7 @@
 // Dify API 타입 정의
 
 export interface DifyRequestPayload {
-  inputs: Record<string, any>;
+  inputs: Record<string, unknown>;
   query: string;
   response_mode: 'blocking' | 'streaming';
   user: string;
@@ -12,7 +12,7 @@ export interface DifyResponseData {
   message_id: string;
   mode: string;
   answer: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface DifyErrorResponse {
@@ -29,9 +29,9 @@ export interface ChatMessage {
 
 // Dify API 설정
 export const DIFY_CONFIG = {
-  apiUrl: process.env.NEXT_PUBLIC_DIFY_API_URL || 'http://localhost/v1',
-  apiKey: process.env.DIFY_API_KEY || 'app-JA4vN5714g2Nd5ftpyFgN49g',
-  userId: process.env.DIFY_USER_ID || 'usr-0adc0770-a7e5-42f3-bc51-7d34f5cd0b92',
+  apiUrl: process.env.NEXT_PUBLIC_DIFY_API_URL || 'http://localhost/api/v1',
+  apiKey: process.env.DIFY_API_KEY || '',
+  userId: process.env.DIFY_USER_ID || 'linco-user-1',
 };
 
 // Dify API 호출 함수
