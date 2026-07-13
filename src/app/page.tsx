@@ -290,6 +290,14 @@ export default function LincoPage() {
     })
   }
 
+  const createNewConversation = () => {
+    const freshConversation = createConversation()
+    setConversations((previous) => [freshConversation, ...previous])
+    setActiveConversationId(freshConversation.id)
+    setActiveTab('chat')
+    setAssistantSidebarOpen(true)
+  }
+
   const selectConversation = (conversationId: string) => {
     setActiveConversationId(conversationId)
     setActiveTab('chat')
@@ -402,13 +410,10 @@ export default function LincoPage() {
             isDark ? 'bg-slate-950/60 border-slate-800/80' : 'bg-white/75 border-slate-200'
           }`}
         >
-          <div className={`rounded-xl border px-4 py-4 ${cardClass}`}>
-            <div className="flex items-center gap-3">
-              <Image src="/LINCO.png" alt="LINCO 로고" width={96} height={32} className="h-8 w-auto object-contain" />
-              <div>
-                <div className="text-xl font-bold tracking-tight">LINCO</div>
-                <div className={`text-xs mt-1 ${mutedTextClass}`}>공공 정보와 AI 비서를 한곳에</div>
-              </div>
+          <div className="px-1 py-2">
+            <div className="flex flex-col items-start">
+              <Image src="/LINCO.png" alt="LINCO 로고" width={104} height={34} className="h-8 w-auto object-contain" />
+              <div className={`mt-2 text-sm font-semibold tracking-wide ${mutedTextClass}`}>시작이 가벼워지다</div>
             </div>
           </div>
 
@@ -506,6 +511,14 @@ export default function LincoPage() {
                       )
                     })}
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={createNewConversation}
+                    className="rounded-xl border px-4 py-3 text-sm font-bold border-sky-400 bg-sky-500 text-white"
+                  >
+                    새 채팅 만들기
+                  </button>
 
                   <button
                     type="button"
