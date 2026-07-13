@@ -12,23 +12,41 @@ function readString(value: unknown) {
   return typeof value === 'string' ? value : ''
 }
 
+function normalizeDifyEndpoint(value: string) {
+  const trimmed = value.trim().replace(/\/+$/, '')
+
+  if (!trimmed) {
+    return 'http://localhost/v1/chat-messages'
+  }
+
+  if (trimmed.endsWith('/chat-messages')) {
+    return trimmed
+  }
+
+  return `${trimmed}/chat-messages`
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const message = readString(body?.message ?? body?.query)
     const conversationId = readString(body?.conversationId ?? body?.conversation_id)
 
-    const difyUrl = process.env.DIFY_API_URL || 'http://localhost/v1/chat-messages'
-    const difyKey = process.env.DIFY_API_KEY || 'app-pvPv6r8cyOf8tN7KS4ylsGhk'
+    const difyEndpoint = normalizeDifyEndpoint(process.env.DIFY_API_URL || '')
+    const difyKey = process.env.DIFY_API_KEY || ''
+    const difyUserId = process.env.DIFY_API_USER_ID || 'linco-web-user'
 
     if (!message.trim()) {
       return NextResponse.json({ answer: '질문 내용을 입력해 주세요.' })
     }
 
     if (!difyKey) {
-      return NextResponse.json({
-        answer: '.env.local 에 DIFY_API_KEY 를 설정해 주세요.',
-      })
+      return NextResponse.json(
+        {
+          answer: '.env.local 에 DIFY_API_KEY 를 설정해 주세요.',
+        },
+        { status: 500 }
+      )
     }
 
     const instruction =
@@ -38,14 +56,14 @@ export async function POST(request: Request) {
       inputs: {},
       query: `${instruction}${message}`,
       response_mode: 'blocking',
-      user: 'linco-web-user',
+      user: difyUserId,
     }
 
     if (conversationId) {
       payload.conversation_id = conversationId
     }
 
-    const response = await fetch(`${difyUrl}/chat-messages`, {
+    const response = await fetch(difyEndpoint, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${difyKey}`,
@@ -73,6 +91,7 @@ export async function POST(request: Request) {
           answer: `Dify API 오류: ${responseError}`,
           conversation_id: conversationId,
           status: response.status,
+          details: responseText,
           raw: data,
         },
         { status: response.status }
