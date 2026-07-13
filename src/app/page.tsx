@@ -22,13 +22,6 @@ interface Conversation {
   updatedAt: number
 }
 
-type BootstrapState = {
-  conversations: Conversation[]
-  activeConversationId: string
-  assistantSidebarOpen: boolean
-  theme: ThemeMode
-}
-
 type CategoryDetail = {
   num: string
   title: string
@@ -36,10 +29,9 @@ type CategoryDetail = {
   bullets: string[]
 }
 
-let conversationSeed = 0
-let messageSeed = 0
-let activitySeed = 0
-let bootstrapCache: BootstrapState | null = null
+let conversationSeed = 1
+let messageSeed = 1
+let activitySeed = 1
 
 const STORAGE_KEYS = {
   conversations: 'linco.chat.conversations.v1',
@@ -51,7 +43,16 @@ const STORAGE_KEYS = {
 const DEFAULT_GREETING: Message = {
   id: 'welcome-1',
   sender: 'ai',
-  text: '안녕하세요. LINCO AI 비서입니다. 새 채팅을 시작하거나 왼쪽 탭에서 주제를 선택해 보세요.',
+  text: '반갑습니다! 일상 속 똑똑한 조력자 링코입니다, 무엇을 도와드릴까요?',
+}
+
+const DEFAULT_CONVERSATION: Conversation = {
+  id: 'conv-1',
+  title: '새 채팅',
+  messages: [DEFAULT_GREETING],
+  conversationId: '',
+  createdAt: 1,
+  updatedAt: 1,
 }
 
 const MAIN_TABS: Array<{ value: MainTab; label: string; description: string }> = [
@@ -174,73 +175,72 @@ function safeParseConversations(raw: string | null) {
   }
 }
 
-function getBootstrap(): BootstrapState {
-  if (bootstrapCache) return bootstrapCache
-
-  const defaultConversation = createConversation()
-
-  if (typeof window === 'undefined') {
-    bootstrapCache = {
-      conversations: [defaultConversation],
-      activeConversationId: defaultConversation.id,
-      assistantSidebarOpen: true,
-      theme: 'dark',
-    }
-    return bootstrapCache
-  }
-
-  const storedConversations = safeParseConversations(window.localStorage.getItem(STORAGE_KEYS.conversations))
-  const conversations = storedConversations && storedConversations.length > 0 ? storedConversations : [defaultConversation]
-  syncCounters(conversations)
-
-  const activeConversationId = window.localStorage.getItem(STORAGE_KEYS.activeConversation)
-  const assistantSidebarOpen = window.localStorage.getItem(STORAGE_KEYS.assistantSidebar)
-  const theme = window.localStorage.getItem(STORAGE_KEYS.theme)
-
-  bootstrapCache = {
-    conversations,
-    activeConversationId:
-      activeConversationId && conversations.some((item) => item.id === activeConversationId)
-        ? activeConversationId
-        : conversations[0].id,
-    assistantSidebarOpen: assistantSidebarOpen ? assistantSidebarOpen === 'open' : true,
-    theme: theme === 'light' ? 'light' : 'dark',
-  }
-
-  return bootstrapCache
-}
-
 function makeConversationTitle(text: string) {
   const compact = text.trim().replace(/\s+/g, ' ')
   return compact.length > 18 ? `${compact.slice(0, 18)}...` : compact || '새 채팅'
 }
 
 export default function LincoPage() {
-  const [theme, setTheme] = useState<ThemeMode>(() => getBootstrap().theme)
+  const [theme, setTheme] = useState<ThemeMode>('dark')
   const [activeTab, setActiveTab] = useState<MainTab>('chat')
-  const [assistantSidebarOpen, setAssistantSidebarOpen] = useState<boolean>(() => getBootstrap().assistantSidebarOpen)
+  const [assistantSidebarOpen, setAssistantSidebarOpen] = useState<boolean>(true)
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [activeDetail, setActiveDetail] = useState<string | null>(null)
-  const [conversations, setConversations] = useState<Conversation[]>(() => getBootstrap().conversations)
-  const [activeConversationId, setActiveConversationId] = useState<string>(() => getBootstrap().activeConversationId)
+  const [conversations, setConversations] = useState<Conversation[]>([DEFAULT_CONVERSATION])
+  const [activeConversationId, setActiveConversationId] = useState<string>(DEFAULT_CONVERSATION.id)
+  const [hydrated, setHydrated] = useState(false)
   const chatEndRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
+    const storedTheme = window.localStorage.getItem(STORAGE_KEYS.theme)
+    const storedSidebar = window.localStorage.getItem(STORAGE_KEYS.assistantSidebar)
+    const storedConversations = safeParseConversations(window.localStorage.getItem(STORAGE_KEYS.conversations))
+    const storedActiveConversation = window.localStorage.getItem(STORAGE_KEYS.activeConversation)
+
+    queueMicrotask(() => {
+      if (storedTheme === 'dark' || storedTheme === 'light') {
+        setTheme(storedTheme)
+      }
+
+      if (storedSidebar === 'open' || storedSidebar === 'closed') {
+        setAssistantSidebarOpen(storedSidebar === 'open')
+      }
+
+      if (storedConversations && storedConversations.length > 0) {
+        syncCounters(storedConversations)
+        setConversations(storedConversations)
+
+        if (storedActiveConversation && storedConversations.some((item) => item.id === storedActiveConversation)) {
+          setActiveConversationId(storedActiveConversation)
+        } else {
+          setActiveConversationId(storedConversations[0].id)
+        }
+      }
+
+      setHydrated(true)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!hydrated) return
     window.localStorage.setItem(STORAGE_KEYS.theme, theme)
-  }, [theme])
+  }, [theme, hydrated])
 
   useEffect(() => {
+    if (!hydrated) return
     window.localStorage.setItem(STORAGE_KEYS.assistantSidebar, assistantSidebarOpen ? 'open' : 'closed')
-  }, [assistantSidebarOpen])
+  }, [assistantSidebarOpen, hydrated])
 
   useEffect(() => {
+    if (!hydrated) return
     window.localStorage.setItem(STORAGE_KEYS.conversations, JSON.stringify(conversations))
-  }, [conversations])
+  }, [conversations, hydrated])
 
   useEffect(() => {
+    if (!hydrated) return
     window.localStorage.setItem(STORAGE_KEYS.activeConversation, activeConversationId)
-  }, [activeConversationId])
+  }, [activeConversationId, hydrated])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const message = readString(body?.message ?? body?.query)
     const conversationId = readString(body?.conversationId ?? body?.conversation_id)
 
-    const difyUrl = process.env.DIFY_API_URL || 'http://localhost/v1'
+    const difyUrl = process.env.DIFY_API_URL || 'http://localhost/chat/fweReG3goZN49TyS'
     const difyKey = process.env.DIFY_API_KEY || 'app-JA4vN5714g2Nd5ftpyFgN49g'
 
     if (!message.trim()) {
@@ -34,19 +34,24 @@ export async function POST(request: Request) {
     const instruction =
       '다음 지침을 지켜서 답변해 주세요.\n- 한국어만 사용합니다.\n- 이모지와 특수기호는 최소한으로 씁니다.\n- 짧고 명확하게 답합니다.\n\n'
 
+    const payload: Record<string, unknown> = {
+      inputs: {},
+      query: `${instruction}${message}`,
+      response_mode: 'blocking',
+      user: 'linco-web-user',
+    }
+
+    if (conversationId) {
+      payload.conversation_id = conversationId
+    }
+
     const response = await fetch(`${difyUrl}/chat-messages`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${difyKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        inputs: {},
-        query: `${instruction}${message}`,
-        response_mode: 'blocking',
-        user: 'linco-web-user',
-        conversation_id: conversationId,
-      }),
+      body: JSON.stringify(payload),
     })
 
     const responseText = await response.text()
@@ -67,6 +72,8 @@ export async function POST(request: Request) {
         {
           answer: `Dify API 오류: ${responseError}`,
           conversation_id: conversationId,
+          status: response.status,
+          raw: data,
         },
         { status: response.status }
       )
