@@ -5,7 +5,7 @@ export async function POST(req: Request) {
     const { message } = await req.json();
 
     // ⚡ 실제 발급받은 Dify 키를 꼭 확인해 주세요! (예: app-xxxx)
-    const DIFY_API_KEY = 'app-ZKgOiWU1HG79NEmFlxUPfwBU'; 
+    const DIFY_API_KEY = 'app-JA4vN5714g2Nd5ftpyFgN49g'; 
     
     // 만약 일반 챗봇이면 chat-messages, 채팅 플로우면 advanced-chat-messages를 씁니다.
     // 안전하게 연동하기 위해 아래 주소 구조를 사용합니다.
